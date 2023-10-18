@@ -112,4 +112,73 @@ available.then(available => {
             Name: config.config['iac-pulumi:public_route_name'],
         },
     });
+
+    // Create an EC2 security group for web applications
+    const appSecurityGroup = new aws.ec2.SecurityGroup(config.config['iac-pulumi:security_group_name'], {
+    vpcId: myvpc.id,
+    description: "Security group for web applications",
+    ingress: [
+      {
+        fromPort: config.config['iac-pulumi:ssh_from_port'], //SSH
+        toPort: config.config['iac-pulumi:ssh_to_port'],
+        protocol: config.config['iac-pulumi:protocol'],
+        cidrBlocks: [config.config['iac-pulumi:ssh_ip']], 
+      },
+      {
+        fromPort: config.config['iac-pulumi:http_from_port'], //HTTP
+        toPort: config.config['iac-pulumi:http_to_port'],
+        protocol: config.config['iac-pulumi:protocol'],
+        cidrBlocks: [config.config['iac-pulumi:cidr_blocks']],
+        ipv6CidrBlocks: [config.config['iac-pulumi:ipv6_cidr_blocks']], 
+      },
+      {
+        fromPort: config.config['iac-pulumi:https_from_port'], //HTTPS
+        toPort: config.config['iac-pulumi:https_to_port'],
+        protocol: config.config['iac-pulumi:protocol'],
+        cidrBlocks: [config.config['iac-pulumi:cidr_blocks']],
+        ipv6CidrBlocks: [config.config['iac-pulumi:ipv6_cidr_blocks']], 
+      },
+      {
+        fromPort: config.config['iac-pulumi:your_from_port'], //your port
+        toPort: config.config['iac-pulumi:your_to_port'],
+        protocol: config.config['iac-pulumi:protocol'],
+        cidrBlocks: [config.config['iac-pulumi:cidr_blocks']],
+        ipv6CidrBlocks: [config.config['iac-pulumi:ipv6_cidr_blocks']], 
+      },
+    ],
+    tags: {
+        Name: config.config['iac-pulumi:security_group_name'],
+    },
+  });
+
+  const ami = aws.ec2.getAmi({
+    filters: [
+        {
+            name: config.config['iac-pulumi:ami_name'],
+            values: [config.config['iac-pulumi:ami_name_value']],
+        },
+        {
+            name: config.config['iac-pulumi:root_device_type_tag'],
+            values: [config.config['iac-pulumi:root_device_type_tag_value']],
+        },
+        {
+            name: config.config['iac-pulumi:virtualization_tag'],
+            values: [config.config['iac-pulumi:virtualization_tag_value']],
+        },
+    ],
+    mostRecent: true,
+    owners: [config.config['iac-pulumi:owner']],
+});
+
+const instance = new aws.ec2.Instance(config.config['iac-pulumi:instance_tag'], {
+    ami: ami.then(i => i.id),
+    instanceType: config.config['iac-pulumi:instance_type'],
+    subnetId: iam_publicSubnets[0],
+    keyName: config.config['iac-pulumi:key_value'],
+    associatePublicIpAddress: true,
+    vpcSecurityGroupIds: [
+        appSecurityGroup.id,
+    ]
+});
+
 });

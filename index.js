@@ -234,6 +234,7 @@ pulumi.runtime.setAllConfig({}, pulumi.getStack(), {
     host_name: dbInstance.endpoint.address,
 });
 
+const envFile = config.config['iac-pulumi:userData_env_path']
 
 dbInstance.endpoint.apply(endpoint => {
     const instance = new aws.ec2.Instance(config.config['iac-pulumi:instance_tag'], {
@@ -247,12 +248,12 @@ dbInstance.endpoint.apply(endpoint => {
             dbSecurityGroup.id,
         ],
         userData: pulumi.interpolate`#!/bin/bash
-            echo "host=${endpoint}" >> /home/admin/opt/webapp/.env
-            echo "user=root" >> /home/admin/opt/webapp/.env
-            echo "password=Asdfghjklz13" >> /home/admin/opt/webapp/.env
-            echo "port=8080" >> /home/admin/opt/webapp/.env
-            echo "dialect=mysql" >> /home/admin/opt/webapp/.env
-            echo "database=cloud_db" >> /home/admin/opt/webapp/.env
+            echo "host=${endpoint}" >> ${envFile}
+            echo "user=${config.config['iac-pulumi:userData_user']}" >> ${envFile}
+            echo "password=${config.config['iac-pulumi:userData_password']}" >> ${envFile}
+            echo "port=${config.config['iac-pulumi:userData_port']}" >> ${envFile}
+            echo "dialect=${config.config['iac-pulumi:userData_dialect']}" >> ${envFile}
+            echo "database=${config.config['iac-pulumi:userData_database']}" >> ${envFile}
         `,
     });
 });

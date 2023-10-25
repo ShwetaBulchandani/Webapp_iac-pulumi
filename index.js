@@ -146,6 +146,12 @@ available.then(available => {
         ipv6CidrBlocks: [config.config['iac-pulumi:ipv6_cidr_blocks']], 
       },
     ],
+    egress: [{
+        fromPort: config.config['iac-pulumi:db_security_group_egress_fromPort'],
+        toPort:config.config['iac-pulumi:db_security_group_egress_toPort'],
+        protocol: config.config['iac-pulumi:db_security_group_egress_protocol'],
+        cidrBlocks: [config.config['iac-pulumi:db_security_group_egress_cidrBlocks']],
+    }],
     tags: {
         Name: config.config['iac-pulumi:security_group_name'],
     },
@@ -185,7 +191,6 @@ const dbSecurityGroup = new aws.ec2.SecurityGroup(config.config['iac-pulumi:db_s
         toPort:config.config['iac-pulumi:db_security_group_egress_toPort'],
         protocol: config.config['iac-pulumi:db_security_group_egress_protocol'],
         cidrBlocks: [config.config['iac-pulumi:db_security_group_egress_cidrBlocks']],
-        securityGroups: [appSecurityGroup.id],
     }],
     tags: {
         Name: config.config['iac-pulumi:db_security_group_name'],
@@ -225,7 +230,7 @@ const dbInstance = new aws.rds.Instance(config.config['iac-pulumi:rds_dbinstance
     password: config.config['iac-pulumi:rds_dbinstance_password'],
     parameterGroupName: dbParameterGroup.name,
     dbSubnetGroupName: dbSubnetGroup,
-    vpcSecurityGroupIds: [dbSecurityGroup.id, appSecurityGroup.id],
+    vpcSecurityGroupIds: [dbSecurityGroup.id],
     publiclyAccessible: config.config['iac-pulumi:rds_dbinstance_publiclyAccessible'],
 });
 
@@ -237,16 +242,14 @@ pulumi.runtime.setAllConfig({}, pulumi.getStack(), {
 const envFile = config.config['iac-pulumi:userData_env_path']
 
 dbInstance.endpoint.apply(endpoint => {
+    const t1=endpoint.split(':');
     const instance = new aws.ec2.Instance(config.config['iac-pulumi:instance_tag'], {
         ami: ami.then(i => i.id),
         instanceType: config.config['iac-pulumi:instance_type'],
         subnetId: iam_publicSubnets[0],
         keyName: config.config['iac-pulumi:key_value'],
         associatePublicIpAddress: true,
-        vpcSecurityGroupIds: [
-            appSecurityGroup.id,
-            dbSecurityGroup.id,
-        ],
+        vpcSecurityGroupIds: [appSecurityGroup.id],
         userData: pulumi.interpolate`#!/bin/bash
             echo "host=${endpoint}" >> ${envFile}
             echo "user=${config.config['iac-pulumi:userData_user']}" >> ${envFile}

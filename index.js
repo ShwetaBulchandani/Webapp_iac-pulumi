@@ -170,15 +170,92 @@ available.then(available => {
     owners: [config.config['iac-pulumi:owner']],
 });
 
-const instance = new aws.ec2.Instance(config.config['iac-pulumi:instance_tag'], {
-    ami: ami.then(i => i.id),
-    instanceType: config.config['iac-pulumi:instance_type'],
-    subnetId: iam_publicSubnets[0],
-    keyName: config.config['iac-pulumi:key_value'],
-    associatePublicIpAddress: true,
-    vpcSecurityGroupIds: [
-        appSecurityGroup.id,
-    ]
+
+// Database Security Group
+const dbSecurityGroup = new aws.ec2.SecurityGroup(config.config['iac-pulumi:db_security_group_name'], {
+    vpcId: myvpc.id,
+    ingress: [{
+        fromPort: config.config['iac-pulumi:db_security_group_ingress_fromPort'],
+        toPort: config.config['iac-pulumi:db_security_group_ingress_toPort'],
+        protocol: config.config['iac-pulumi:db_security_group_ingress_protocol'],
+        securityGroups: [appSecurityGroup.id],
+    }],
+    egress: [{
+        fromPort: config.config['iac-pulumi:db_security_group_egress_fromPort'],
+        toPort:config.config['iac-pulumi:db_security_group_egress_toPort'],
+        protocol: config.config['iac-pulumi:db_security_group_egress_protocol'],
+        cidrBlocks: [config.config['iac-pulumi:db_security_group_egress_cidrBlocks']],
+        securityGroups: [appSecurityGroup.id],
+    }],
+    tags: {
+        Name: config.config['iac-pulumi:db_security_group_name'],
+    },
+});
+
+// RDS Parameter Group
+const dbParameterGroup = new aws.rds.ParameterGroup(config.config['iac-pulumi:rds_parameter_group_name'], {
+    family: config.config['iam-pulumi:rdsParameterGroup_family'],
+    vpcId: myvpc.id,
+    parameters: [{
+        name: config.config['iam-pulumi:rdsParameterGroup_parameters_name'],
+        value: config.config['iam-pulumi:rdsParameterGroup_parameters_value'],
+    }]
+});
+
+// Create a DB subnet group for RDS instances
+const dbSubnetGroup = new aws.rds.SubnetGroup(config.config['iac-pulumi:rds_db_subnet_group_name'], {
+    subnetIds: iam_privateSubnets.map(subnet => subnet.id),
+    tags: {
+        Name: config.config['iac-pulumi:rds_db_subnet_group_name'],
+    },
+});
+
+
+// RDS Instance
+const dbInstance = new aws.rds.Instance(config.config['iac-pulumi:rds_dbinstance'], {
+    allocatedStorage: config.config['iac-pulumi:rds_dbinstance_allocatedStorage'],
+    storageType: config.config['iac-pulumi:rds_dbinstance_storageType'],
+    engine: config.config['iac-pulumi:rds_dbinstance_engine'],
+    engineVersion: config.config['iac-pulumi:rds_dbinstance_engineVersion'],
+    skipFinalSnapshot: config.config['iac-pulumi:rds_dbinstance_skipFinalSnapshot'],
+    instanceClass: config.config['iac-pulumi:rds_dbinstance_instanceClass'],
+    multiAz: config.config['iac-pulumi:rds_dbinstance_multiAz'],
+    dbName: config.config['iac-pulumi:rds_dbinstance_dbName'],
+    username: config.config['iac-pulumi:rds_dbinstance_username'],
+    password: config.config['iac-pulumi:rds_dbinstance_password'],
+    parameterGroupName: dbParameterGroup.name,
+    dbSubnetGroupName: dbSubnetGroup,
+    vpcSecurityGroupIds: [dbSecurityGroup.id, appSecurityGroup.id],
+    publiclyAccessible: config.config['iac-pulumi:rds_dbinstance_publiclyAccessible'],
+});
+
+// Set outputs for the stack
+pulumi.runtime.setAllConfig({}, pulumi.getStack(), {
+    host_name: dbInstance.endpoint.address,
+});
+
+const envFile = config.config['iac-pulumi:userData_env_path']
+
+dbInstance.endpoint.apply(endpoint => {
+    const instance = new aws.ec2.Instance(config.config['iac-pulumi:instance_tag'], {
+        ami: ami.then(i => i.id),
+        instanceType: config.config['iac-pulumi:instance_type'],
+        subnetId: iam_publicSubnets[0],
+        keyName: config.config['iac-pulumi:key_value'],
+        associatePublicIpAddress: true,
+        vpcSecurityGroupIds: [
+            appSecurityGroup.id,
+            dbSecurityGroup.id,
+        ],
+        userData: pulumi.interpolate`#!/bin/bash
+            echo "host=${endpoint}" >> ${envFile}
+            echo "user=${config.config['iac-pulumi:userData_user']}" >> ${envFile}
+            echo "password=${config.config['iac-pulumi:userData_password']}" >> ${envFile}
+            echo "port=${config.config['iac-pulumi:userData_port']}" >> ${envFile}
+            echo "dialect=${config.config['iac-pulumi:userData_dialect']}" >> ${envFile}
+            echo "database=${config.config['iac-pulumi:userData_database']}" >> ${envFile}
+        `,
+    });
 });
 
 });

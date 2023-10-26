@@ -250,6 +250,14 @@ dbInstance.endpoint.apply(endpoint => {
         keyName: config.config['iac-pulumi:key_value'],
         associatePublicIpAddress: true,
         vpcSecurityGroupIds: [appSecurityGroup.id],
+        ebsBlockDevices: [
+            {
+                deviceName: config.config['iac-pulumi:EC2_DEVICE_NAME'],
+                deleteOnTermination: config.config['iac-pulumi:EC2_DELETE_ON_TERMINATION'],
+                volumeSize: config.config['iac-pulumi:EC2_VOLUME_SIZE'],
+                volumeType: config.config['iac-pulumi:EC2_VOLUME_TYPE']
+            }
+        ],
         userData: pulumi.interpolate`#!/bin/bash
             echo "host=${endpoint}" >> ${envFile}
             echo "user=${config.config['iac-pulumi:userData_user']}" >> ${envFile}

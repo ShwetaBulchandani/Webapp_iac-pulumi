@@ -234,19 +234,46 @@ const dbInstance = new aws.rds.Instance(config.config['iac-pulumi:rds_dbinstance
     publiclyAccessible: config.config['iac-pulumi:rds_dbinstance_publiclyAccessible'],
 });
 
-// Set outputs for the stack
-pulumi.runtime.setAllConfig({}, pulumi.getStack(), {
-    host_name: dbInstance.endpoint.address,
+// // Set outputs for the stack
+// pulumi.runtime.setAllConfig({}, pulumi.getStack(), {
+//     host_name: dbInstance.endpoint.address,
+// });
+
+dbInstance.endpoint.apply((endpoint) => {
+
+const IAMRole = new aws.iam.Role("IAM", {
+    assumeRolePolicy: JSON.stringify({
+        Version: "2012-10-17",
+        Statement: [
+            {
+                Action: config.config['iac-pulumi:IAM_POLICY_action'],
+                Effect: config.config['iac-pulumi:IAM_POLICY_effect'],
+                Principal: {
+                    Service: config.config['iac-pulumi:IAM_POLICY_Principal_Service'],  
+                },
+            },
+        ],
+    })
+})
+
+const policy = new aws.iam.PolicyAttachment(config.config['iac-pulumi:IAM_POLICY'], {
+    policyArn: config.config['iac-pulumi:IAM_POLICY_ARN'],
+    roles: [IAMRole.name],
+});
+
+const roleAttachment = new aws.iam.InstanceProfile(config.config['iac-pulumi:IAM_POLICY_instance_profile'], {
+    role: IAMRole.name,
 });
 
 const envFile = config.config['iac-pulumi:userData_env_path']
 
-dbInstance.endpoint.apply(endpoint => {
-    const t1=endpoint.split(':');
+// dbInstance.endpoint.apply(endpoint => {
+//     const t1=endpoint.split(':');
     const instance = new aws.ec2.Instance(config.config['iac-pulumi:instance_tag'], {
         ami: ami.then(i => i.id),
         instanceType: config.config['iac-pulumi:instance_type'],
         subnetId: iam_publicSubnets[0],
+        iamInstanceProfile: roleAttachment.name,
         keyName: config.config['iac-pulumi:key_value'],
         associatePublicIpAddress: true,
         vpcSecurityGroupIds: [appSecurityGroup.id],
@@ -265,8 +292,27 @@ dbInstance.endpoint.apply(endpoint => {
             echo "port=${config.config['iac-pulumi:userData_port']}" >> ${envFile}
             echo "dialect=${config.config['iac-pulumi:userData_dialect']}" >> ${envFile}
             echo "database=${config.config['iac-pulumi:userData_database']}" >> ${envFile}
+            sudo chown -R csye6225 /opt/csye6225
+            sudo chgrp -R csye6225 /opt/csye6225
+            sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/csye6225/cloudwatch-config.json -s
+            sudo systemctl restart amazon-cloudwatch-agent
         `,
+    });
+
+    const hostedZone = aws.route53.getZone({ name: config.config['iac-pulumi:route53record_name'] });
+    const route53Record = new aws.route53.Record("myRoute53Record"
+    , {
+        name: config.config['iac-pulumi:route53record_name'],
+        zoneId: hostedZone.then(zone => zone.zoneId),
+        type: config.config['iac-pulumi:route53record_type'],
+        records: [instance.publicIp],
+        ttl: config.config['iac-pulumi:route53record_ttl'],
     });
 });
 
 });
+
+
+
+
+

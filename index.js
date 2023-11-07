@@ -215,7 +215,6 @@ const dbSubnetGroup = new aws.rds.SubnetGroup(config.config['iac-pulumi:rds_db_s
     },
 });
 
-
 // RDS Instance
 const dbInstance = new aws.rds.Instance(config.config['iac-pulumi:rds_dbinstance'], {
     allocatedStorage: config.config['iac-pulumi:rds_dbinstance_allocatedStorage'],
@@ -234,10 +233,6 @@ const dbInstance = new aws.rds.Instance(config.config['iac-pulumi:rds_dbinstance
     publiclyAccessible: config.config['iac-pulumi:rds_dbinstance_publiclyAccessible'],
 });
 
-// // Set outputs for the stack
-// pulumi.runtime.setAllConfig({}, pulumi.getStack(), {
-//     host_name: dbInstance.endpoint.address,
-// });
 
 dbInstance.endpoint.apply((endpoint) => {
 
@@ -267,8 +262,6 @@ const roleAttachment = new aws.iam.InstanceProfile(config.config['iac-pulumi:IAM
 
 const envFile = config.config['iac-pulumi:userData_env_path']
 
-// dbInstance.endpoint.apply(endpoint => {
-//     const t1=endpoint.split(':');
     const instance = new aws.ec2.Instance(config.config['iac-pulumi:instance_tag'], {
         ami: ami.then(i => i.id),
         instanceType: config.config['iac-pulumi:instance_type'],

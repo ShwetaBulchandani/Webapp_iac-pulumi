@@ -1,8 +1,8 @@
 # iac-pulumi/README.md
 
 
- # iac-pulumi
- * 
+# iac-pulumi
+
 ## Introduction:
  * This project uses Pulumi to manage AWS infrastructure for your Dev and Demo environments.
  * 
@@ -80,5 +80,4 @@
  * 
  * Userdata Script Updates:
  * - Your userdata script should configure the CloudWatch agent and restart it.
- */
 

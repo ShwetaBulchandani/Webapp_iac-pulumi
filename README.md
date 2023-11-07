@@ -1,40 +1,40 @@
-// iac-pulumi/README.md
+# iac-pulumi/README.md
 
-/**
- * iac-pulumi
+
+ # iac-pulumi
  * 
- * Introduction:
+## Introduction:
  * This project uses Pulumi to manage AWS infrastructure for your Dev and Demo environments.
  * 
- * Prerequisites:
+## Prerequisites:
  * - Node.js (version >= 14)
  * - Pulumi CLI (version >= 3.88.0)
  * - AWS CLI (version >= 2)
  * 
- * How to Run Pulumi:
+## How to Run Pulumi:
  * 1. pulumi up
  * 2. pulumi new
  * 3. pulumi destroy
  * 
- * Requirements:
+## Requirements:
  * Providers:
  * - Pulumi AWS (version >= 5.42.0)
  * 
- * Modules:
+## Modules:
  * - vpc_cidr_block
  * - vpc_name
  * - vpc_internet_gateway_name
  * - vpc_public_subnet_name
  * - vpc_public_route_name
  * 
- * Resources:
+## Resources:
  * - aws_vpc
  * - aws_internet_gateway
  * - aws_subnet
  * - aws_route_table
  * - aws_route_table_association
  * 
- * AWS Custom VPC Creation Steps:
+## AWS Custom VPC Creation Steps:
  * 1. Select the region.
  * 2. Create VPC.
  * 3. Enable DNS hostnames in the VPC.
@@ -50,7 +50,7 @@
  * 13. Add a public route to the Private Route Table.
  * 14. Associate the Private Subnets with the Private Route Table.
  * 
- * Application Setup:
+## Application Setup:
  * 
  * DNS & EC2 Instance A Record:
  * - Route53 should be updated by Pulumi.

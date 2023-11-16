@@ -319,9 +319,6 @@ const envFile = config.config['iac-pulumi:userData_env_path']
             echo "port=${config.config['iac-pulumi:userData_port']}" >> ${envFile}
             echo "dialect=${config.config['iac-pulumi:userData_dialect']}" >> ${envFile}
             echo "database=${config.config['iac-pulumi:userData_database']}" >> ${envFile}
-            sudo chown -R csye6225 /opt/csye6225
-            sudo chgrp -R csye6225 /opt/csye6225
-            sudo /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/csye6225/cloudwatch-config.json -s
             sudo systemctl restart amazon-cloudwatch-agent
         `).toString('base64'),  
     });

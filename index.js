@@ -138,14 +138,6 @@ available.then((available) => {
       description: "Security group for the load balancer",
       ingress: [
         {
-          fromPort: config.config["iac-pulumi:lb_security_group_http_fromPort"],
-          toPort: config.config["iac-pulumi:lb_security_group_http_toPort"],
-          protocol: config.config["iac-pulumi:lb_security_group_http_protocol"],
-          cidrBlocks: [
-            config.config["iac-pulumi:lb_security_group_http_cidrBlocks"],
-          ],
-        },
-        {
           fromPort:
             config.config["iac-pulumi:lb_security_group_https_fromPort"],
           toPort: config.config["iac-pulumi:lb_security_group_https_toPort"],

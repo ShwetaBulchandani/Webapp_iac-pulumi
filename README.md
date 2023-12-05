@@ -81,3 +81,22 @@
  * Userdata Script Updates:
  * - Your userdata script should configure the CloudWatch agent and restart it.
 
+# Import SSL Certificate to AWS Certificate Manager
+
+Follow the steps below to import your SSL certificate into AWS Certificate Manager (ACM).
+
+## Prerequisites
+1. Ensure you have the AWS CLI installed and configured with the necessary credentials.
+2. Have your SSL certificate files ready:
+   - Certificate file: `demo_shwetabulchandani.me/demo_shwetabulchandani_me.crt`
+   - Private key file: `shwetaprivatekey.pem`
+   - Certificate chain file: `demo_shwetabulchandani.me/demo_shwetabulchandani_me.ca-bundle`
+
+## Import Certificate Command
+
+Use the following AWS CLI command to import the SSL certificate into ACM:
+
+aws acm import-certificate \
+  --certificate fileb:///Users/shwetabulchandani/Documents/CloudCertificate/demo_shwetabulchandani.me/demo_shwetabulchandani_me.crt \
+  --private-key fileb:///Users/shwetabulchandani/Documents/CloudCertificate/shwetaprivatekey.pem \
+  --certificate-chain fileb:///Users/shwetabulchandani/Documents/CloudCertificate/demo_shwetabulchandani.me/demo_shwetabulchandani_me.ca-bundle
